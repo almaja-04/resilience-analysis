@@ -27,23 +27,23 @@ q9_NewHeadings <-
 # Filter for question
 current_question <- data %>%
   select(starts_with("q9_"))
-  
+
 # Transpose the dataframe and add extra columns
 current_question <- as.data.frame(t(current_question))
 current_question <- current_question %>%
   mutate("High Influence" = NA, "Medium Influence" = NA, "Low Influence" = NA, 
          "No Influence" = NA, "Unsure" = NA)
-  
+
 # Add counts for each level of influence for each response
 current_question[] <- lapply(current_question, as.character)
-  
+
 # Count the number of each level of influence for each response
 current_question$`High Influence` <- 
   rowSums(current_question == "high influence", na.rm = TRUE)
 current_question$`Medium Influence` <- 
   rowSums(current_question == "medium influence", na.rm = TRUE)
 current_question$`Low Influence` <- 
-   rowSums(current_question == "low influence", na.rm = TRUE)
+  rowSums(current_question == "low influence", na.rm = TRUE)
 current_question$`No Influence` <- 
   rowSums(current_question == "no influence", na.rm = TRUE)
 current_question$`Unsure` <- 
@@ -71,7 +71,7 @@ current_question_pivot1 <- current_question_pivot %>%
   mutate(Proportion = (Freq/`Total per change`))
 
 #Create a dataframe that orders changes in terms of level of influence
- # and appends this onto main pivot table
+# and appends this onto main pivot table
 reordered_change_data <- current_question_pivot1 %>%
   filter(`Influence Level` %in% c("High Influence", "Medium Influence")) %>%
   group_by(`Change Made`) %>%
@@ -97,7 +97,7 @@ ggplot(current_question_pivot, aes(x = reorder(`Change Made`, Freq),
   theme(axis.title.y = element_text(angle = 90, vjust = 2),
         panel.grid.major.y = element_line(colour = "white"),
         panel.grid.major.x = element_line(colour = "grey")
-
+        
   )
 
 # Save to .jpg
@@ -210,6 +210,11 @@ current_heatmap <-
 # Save to .jpg
 ggsave("q9_heatmap.jpg", current_heatmap, width = 11, height = 8)
 
+#############################################################
+# PLOTTING WITH "I AM A PART OF THE SCHEME" STILL IN THE DATA
+#############################################################
+
+
 
 # PREPARING QUESTION 20 FOR PLOTTING -------------------------------------------
 
@@ -304,30 +309,7 @@ reordered_scheme_data <- schemes_pivot1 %>%
 schemes_pivot1 <- schemes_pivot1 %>%
   mutate(Scheme = factor(Scheme, levels = reordered_scheme_data$Scheme))
 
-# PLOT QUESTION 20 PERCENTAGE GRAPHS -------------------------------------------
-
-# Plot
-ggplot(schemes_pivot1, aes(x = Scheme, y = Proportion, 
-                           fill = `Influence Level`)) + 
-  geom_bar(stat = "identity", position = "stack") + expand_limits(y = 1) + 
-  coord_flip() + 
-  labs(
-    title = str_wrap(
-      "Schemes where a change was made (or is planned to be made), and the level of influence that Resilience fund support had on the change", 50),
-    x = "Scheme", y = "Percentage") + 
-  scale_x_discrete(labels = label_wrap(30)) + 
-  scale_y_continuous(labels = scales::percent) + 
-  geom_text(aes(label = sprintf("%d%%", round(Proportion*100))), 
-            position = position_stack(vjust = 0.5), colour = "white") +
-  theme(axis.title.y = element_text(angle = 90, vjust = 2),
-        panel.grid.major.y = element_line(colour = "white"),
-        panel.grid.major.x = element_line(colour = "grey")
-  )
-
-# Save to .jpg
-ggsave("influence_on_schemes.jpg", width = 11, height = 8)
-
-# THIS SECTION ADDS AN EXTRA COLUMN FOR AVERAGE INFLUENCE ACROSS ALL CHANGES
+# THIS SECTION ADDS AN EXTRA COLUMN FOR AVERAGE INFLUENCE ACROSS ALL SCHEMES
 
 # Append totals for each level of influence onto dataframe
 new_scheme_df <- rownames_to_column(df_schemes, var = "Scheme")
@@ -351,8 +333,113 @@ new_scheme_pivot1 <- new_scheme_pivot %>%
 # (The pivot table with changes separated)
 combined_scheme_pivot <- bind_rows(schemes_pivot1, new_scheme_pivot1)
 
-# Plot percentage graphs, with an extra column showing influence on all changes
-ggplot(combined_scheme_pivot, aes(x = Scheme, y = Proportion, fill = `Influence Level`)) + 
+#################################################
+# REMOVE "I AM A PART OF THE SCHEME" RESPONSES
+#################################################
+
+
+# Filter for question
+current_question <- data %>% 
+  select(starts_with("q20_")) %>%
+  select(-c(1:10))
+
+# Remove "_influence" from each column heading
+colnames(current_question) <- 
+  str_remove(colnames(current_question), "_influence$")
+
+# Split data into separate data frames based on scheme
+split_dfs <- setNames(lapply(group_names, function(group) {
+  current_question %>% select(matches(paste0("_", group, "$")))
+}), group_names)
+
+names(split_dfs) <- paste0("influence_", group_names)
+list2env(split_dfs, env = .GlobalEnv)
+
+# Create master dataframe to bind individual scheme data to
+df_schemes <- data.frame(
+)
+
+for (i in 1:nrow(df_iterate)) {
+  current_scheme <- get(df_iterate[i,1])
+  
+  current_scheme <- as.data.frame(t(current_scheme))
+  
+  current_scheme <- current_scheme %>%
+    mutate("High Influence" = NA, "Low Influence" = NA, "No Influence" = NA)
+  
+  # Add counts for each level of influence for each response
+  current_scheme[] <- lapply(current_scheme, as.character)
+  
+  # Count the number of each level of influence for each response
+  current_scheme$`High Influence` <- 
+    rowSums(current_scheme == "high influence", na.rm = TRUE)
+  current_scheme$`Low Influence` <- 
+    rowSums(current_scheme == "low influence", na.rm = TRUE)
+  current_scheme$`No Influence` <- 
+    rowSums(current_scheme == "no influence", na.rm = TRUE)
+  
+  # Keeping columns with totals
+  current_scheme <- current_scheme %>%
+    select(c(913, 914, 915))
+  
+  # Add up the total levels of influence
+  current_scheme <- rownames_to_column(current_scheme, var = "Scheme")
+  current_scheme <- current_scheme %>%
+    adorn_totals(current_scheme, where = "row", name = paste0(df_iterate[i,2]))
+  
+  # Keep only these totals
+  rownames(current_scheme) <- current_scheme$Scheme
+  current_scheme$Scheme <- NULL
+  current_scheme <- current_scheme[-c(1:3),]
+  
+  df_schemes <- bind_rows(df_schemes, current_scheme)
+}
+
+# Convert to pivot table
+schemes_pivot <- 
+  data.frame(as.table(as.matrix(df_schemes, row.names = 1)))
+colnames(schemes_pivot) <- c("Scheme", "Influence Level", "Freq")
+
+# Append proportions onto the end of the pivot table
+schemes_pivot1 <- schemes_pivot %>%
+  mutate(`Total per scheme` = ave(Freq, Scheme, FUN = sum)) %>%
+  mutate(Proportion = (Freq/`Total per scheme`))
+
+#Create a dataframe that orders changes in terms of level of influence
+# and appends this onto main pivot table
+reordered_scheme_data <- schemes_pivot1 %>%
+  filter(`Influence Level` %in% c("High Influence")) %>%
+  group_by(Scheme) %>%
+  summarise(Total_High = sum(Proportion, na.rm = TRUE)) %>%
+  arrange(Total_High)  # Sort in descending order
+schemes_pivot1 <- schemes_pivot1 %>%
+  mutate(Scheme = factor(Scheme, levels = reordered_scheme_data$Scheme))
+
+# THIS SECTION ADDS AN EXTRA COLUMN FOR AVERAGE INFLUENCE ACROSS ALL SCHEMES
+
+# Append totals for each level of influence onto dataframe
+new_scheme_df <- rownames_to_column(df_schemes, var = "Scheme")
+new_scheme_df <- 
+  adorn_totals(new_scheme_df, where = "row", name = "All schemes")
+rownames(new_scheme_df) <- new_scheme_df$Scheme
+new_scheme_df$Scheme <- NULL
+new_scheme_df <- new_scheme_df[-c(1:10),]
+
+# Create a pivot table for these totals
+new_scheme_pivot <- 
+  data.frame(as.table(as.matrix(new_scheme_df, row.names = 1)))
+colnames(new_scheme_pivot) <- c("Scheme", "Influence Level", "Freq")
+
+# Append proportions onto the end of the pivot table
+new_scheme_pivot1 <- new_scheme_pivot %>%
+  mutate(`Total per scheme` = ave(Freq, Scheme, FUN = sum)) %>%
+  mutate(Proportion = (Freq/`Total per scheme`))
+
+# Bind the totals pivot together with the original pivot table
+# (The pivot table with changes separated)
+combined_scheme_pivot_only_applied <- bind_rows(schemes_pivot1, new_scheme_pivot1)
+
+ggplot(combined_scheme_pivot_only_applied, aes(x = Scheme, y = Proportion, fill = `Influence Level`)) + 
   geom_bar(stat = "identity", position = "stack") + expand_limits(y = 1) + 
   coord_flip() + 
   labs(
@@ -367,6 +454,39 @@ ggplot(combined_scheme_pivot, aes(x = Scheme, y = Proportion, fill = `Influence 
         panel.grid.major.y = element_line(colour = "white"),
         panel.grid.major.x = element_line(colour = "grey")
   )
-
 # Save to .jpg
-ggsave("combined_influence_on_schemes_no_applieds.jpg", width = 11, height = 8)
+ggsave("combined_influence_on_schemes_only_applied.jpg", width = 11, height = 8)
+
+
+# ITERATION TO PLOT INFLUENCE ON SCHEME APPLICATION GRAPHS ---------------------
+
+scheme_plot_iterate <- data.frame(
+  scheme_data = c("combined_scheme_pivot", "combined_scheme_pivot_only_applied"),
+  file_name = c("combined_influence_on_schemes.jpg", 
+                "combined_influence_on_schemes_only_applied.jpg"),
+  graph_name = 
+    c("Schemes beneficiaries were a part of, had applied or were planning to apply to, and the level of influence support received through the Resilience fund had on that decision",
+      "Schemes where respondents had applied, or were planning to apply, and the level of influence support received through the Resilience fund had on that decision")
+)
+
+for (i in 1:nrow(scheme_plot_iterate)) {
+  to_plot <- get(scheme_plot_iterate[i,1])
+  
+  # Plot
+  ggplot(to_plot, aes(x = Scheme, y = Proportion, fill = `Influence Level`)) + 
+    geom_bar(stat = "identity", position = "stack") + expand_limits(y = 1) + 
+    coord_flip() + 
+    labs(
+      title = str_wrap(paste0(scheme_plot_iterate[i,3]), 50),
+      x = "Scheme", y = "Percentage") + 
+    scale_x_discrete(labels = label_wrap(30)) + 
+    scale_y_continuous(labels = scales::percent) + 
+    geom_text(aes(label = sprintf("%d%%", round(Proportion*100))), 
+              position = position_stack(vjust = 0.5), colour = "white") +
+    theme(axis.title.y = element_text(angle = 90, vjust = 2),
+          panel.grid.major.y = element_line(colour = "white"),
+          panel.grid.major.x = element_line(colour = "grey")
+    )
+  # Save to .jpg
+  ggsave(paste0(scheme_plot_iterate[i,2]), width = 11, height = 8)
+}
