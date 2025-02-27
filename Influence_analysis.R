@@ -66,18 +66,18 @@ current_question_pivot <-
 colnames(current_question_pivot) <- c("Change Made", "Influence Level", "Freq")
 
 # Append proportions onto the end of the pivot table
-current_question_pivot1 <- current_question_pivot %>%
+current_question_pivot_props <- current_question_pivot %>%
   mutate(`Total per change` = ave(Freq, `Change Made`, FUN = sum)) %>%
   mutate(Proportion = (Freq/`Total per change`))
 
 #Create a dataframe that orders changes in terms of level of influence
 # and appends this onto main pivot table
-reordered_change_data <- current_question_pivot1 %>%
+reordered_change_data <- current_question_pivot_props %>%
   filter(`Influence Level` %in% c("High Influence", "Medium Influence")) %>%
   group_by(`Change Made`) %>%
   summarise(Total_High_Medium = sum(Proportion, na.rm = TRUE)) %>%
   arrange(Total_High_Medium)  # Sort in descending order
-current_question_pivot1 <- current_question_pivot1 %>%
+current_question_pivot_props <- current_question_pivot_props %>%
   mutate(`Change Made` = factor(`Change Made`, 
                                 levels = reordered_change_data$`Change Made`))
 
@@ -104,7 +104,7 @@ ggplot(current_question_pivot, aes(x = reorder(`Change Made`, Freq),
 ggsave("Influence_on_change_count.jpg", width = 11, height = 8)
 
 # Plot count graphs, in the order of % high influence
-ggplot(current_question_pivot1, aes(x = `Change Made`, 
+ggplot(current_question_pivot_props, aes(x = `Change Made`, 
                                     y = Freq, fill = `Influence Level`)) + 
   geom_bar(stat = "identity", position = "stack") + expand_limits(y = 300) + 
   coord_flip() + 
@@ -125,7 +125,7 @@ ggsave("Influence_on_change_count1.jpg", width = 11, height = 8)
 # PLOT QUESTION 9 PERCENTAGE GRAPHS --------------------------------------------
 
 # Plot percentage graphs
-ggplot(current_question_pivot1, aes(x = `Change Made`, y = Proportion, 
+ggplot(current_question_pivot_props, aes(x = `Change Made`, y = Proportion, 
                                     fill = `Influence Level`)) + 
   geom_bar(stat = "identity", position = "stack") + expand_limits(y = 1) + 
   coord_flip() + 
@@ -167,7 +167,7 @@ new_question_pivot1 <- new_question_pivot %>%
 
 # Bind the totals pivot together with the original pivot table
 # (The pivot table with changes separated)
-combined_change_pivot <- bind_rows(current_question_pivot1, new_question_pivot1)
+combined_change_pivot <- bind_rows(current_question_pivot_props, new_question_pivot1)
 
 # Plot percentage graphs, with an extra column showing influence on all changes
 ggplot(combined_change_pivot, aes(x = `Change Made`, y = Proportion, fill = `Influence Level`)) + 
@@ -195,9 +195,6 @@ ggsave("Combined_influence_on_change.jpg", width = 11, height = 8)
 chisq <- chisq.test(current_question)
 print("Chi-square result for Q8")
 print(chisq)
-fishers <- chisq.test(current_question, simulate.p.value = TRUE)
-print("Fishers exact result for Q8")
-print(fishers)
 
 current_residuals <- as.data.frame(chisq$stdres) %>%
   select(-Unsure)
@@ -294,18 +291,18 @@ schemes_pivot <-
 colnames(schemes_pivot) <- c("Scheme", "Influence Level", "Freq")
 
 # Append proportions onto the end of the pivot table
-schemes_pivot1 <- schemes_pivot %>%
+schemes_pivot_proportion <- schemes_pivot %>%
   mutate(`Total per scheme` = ave(Freq, Scheme, FUN = sum)) %>%
   mutate(Proportion = (Freq/`Total per scheme`))
 
 #Create a dataframe that orders changes in terms of level of influence
 # and appends this onto main pivot table
-reordered_scheme_data <- schemes_pivot1 %>%
+reordered_scheme_data <- schemes_pivot_proportion %>%
   filter(`Influence Level` %in% c("High Influence")) %>%
   group_by(Scheme) %>%
   summarise(Total_High = sum(Proportion, na.rm = TRUE)) %>%
   arrange(Total_High)  # Sort in descending order
-schemes_pivot1 <- schemes_pivot1 %>%
+schemes_pivot_proportion <- schemes_pivot_proportion %>%
   mutate(Scheme = factor(Scheme, levels = reordered_scheme_data$Scheme))
 
 # THIS SECTION ADDS AN EXTRA COLUMN FOR AVERAGE INFLUENCE ACROSS ALL SCHEMES
@@ -330,7 +327,7 @@ new_scheme_pivot1 <- new_scheme_pivot %>%
 
 # Bind the totals pivot together with the original pivot table
 # (The pivot table with changes separated)
-combined_scheme_pivot <- bind_rows(schemes_pivot1, new_scheme_pivot1)
+combined_scheme_pivot <- bind_rows(schemes_pivot_proportion, new_scheme_pivot1)
 
 
             ##################################################
@@ -401,18 +398,18 @@ schemes_pivot <-
 colnames(schemes_pivot) <- c("Scheme", "Influence Level", "Freq")
 
 # Append proportions onto the end of the pivot table
-schemes_pivot1 <- schemes_pivot %>%
+schemes_pivot_proportion <- schemes_pivot %>%
   mutate(`Total per scheme` = ave(Freq, Scheme, FUN = sum)) %>%
   mutate(Proportion = (Freq/`Total per scheme`))
 
 #Create a dataframe that orders changes in terms of level of influence
 # and appends this onto main pivot table
-reordered_scheme_data <- schemes_pivot1 %>%
+reordered_scheme_data <- schemes_pivot_proportion %>%
   filter(`Influence Level` %in% c("High Influence")) %>%
   group_by(Scheme) %>%
   summarise(Total_High = sum(Proportion, na.rm = TRUE)) %>%
   arrange(Total_High)  # Sort in descending order
-schemes_pivot1 <- schemes_pivot1 %>%
+schemes_pivot_proportion <- schemes_pivot_proportion %>%
   mutate(Scheme = factor(Scheme, levels = reordered_scheme_data$Scheme))
 
 # THIS SECTION ADDS AN EXTRA COLUMN FOR AVERAGE INFLUENCE ACROSS ALL SCHEMES
@@ -437,7 +434,7 @@ new_scheme_pivot1 <- new_scheme_pivot %>%
 
 # Bind the totals pivot together with the original pivot table
 # (The pivot table with changes separated)
-combined_scheme_pivot_only_applied <- bind_rows(schemes_pivot1, new_scheme_pivot1)
+combined_scheme_pivot_only_applied <- bind_rows(schemes_pivot_proportion, new_scheme_pivot1)
 
 # ITERATION TO PLOT INFLUENCE ON SCHEME APPLICATION GRAPHS ---------------------
 
