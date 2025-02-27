@@ -14,12 +14,6 @@ use_afcharts()
 # Load in survey data
 data <- read.csv("FinalSurveyData.csv")
 
-# Dataframe for each question, to iterate through future code
-question_dataframe <- data.frame(
-  question_number = c("q9_", "q20_"),
-  headings = c("q9_NewHeadings", "q20_NewHeadings")
-)
-
 # Lists to rename headings
 q9_NewHeadings <- 
   c("Stay farming - grow the business", "Stay farming - reduce business size", 
@@ -27,11 +21,6 @@ q9_NewHeadings <-
     "Stay farming - increase productivity", 
     "Stay farming - change core agricultural enterprises", 
     "Leave farming - retire or pass on", "Leave farming - other reasons", "Other")
-q20_NewHeadings <-
-  c("Animal Health and and Welfare", "Countryside Stewardship", "Farming in Protected Landscapes",
-    "Farming Equipment and Technology Fund", "Farming Transformation Fund",
-    "Landscape Recovery", "Slurry Infrastructure Grants", "Sustainable Farming Incentive",
-    "Tree Health Pilot", "Woodland Creation Offer")
 
 # PREPARING QUESTION 9 FOR PLOTTING --------------------------------------------
 
@@ -63,12 +52,6 @@ current_question$`Unsure` <-
 # Keeping columns with only counts
 current_question <- current_question %>%
   select(c(913, 914, 915, 916, 917))
-  
-#  if (question_dataframe[i,1] == "q20_") {
-#    # Keeping columns with only counts
-#    current_question <- current_question %>%
-#      select(c(913, 914, 915))
-#  }
 
 # Renaming question responses for clarity
 row.names(current_question) <- q9_NewHeadings
@@ -162,6 +145,8 @@ ggplot(current_question_pivot1, aes(x = `Change Made`, y = Proportion,
 # Save to .jpg
 ggsave("Influence_on_change_percent.jpg", width = 11, height = 8)
 
+# THIS SECTION ADDS AN EXTRA COLUMN FOR AVERAGE INFLUENCE ACROSS ALL CHANGES
+
 # Append totals for each level of influence onto dataframe
 new_current_question <- rownames_to_column(current_question_no_unsure, var = "Change")
 new_current_question <- 
@@ -182,10 +167,10 @@ new_question_pivot1 <- new_question_pivot %>%
 
 # Bind the totals pivot together with the original pivot table
 # (The pivot table with changes separated)
-combined_pivot <- bind_rows(current_question_pivot1, new_question_pivot1)
+combined_change_pivot <- bind_rows(current_question_pivot1, new_question_pivot1)
 
 # Plot percentage graphs, with an extra column showing influence on all changes
-ggplot(combined_pivot, aes(x = `Change Made`, y = Proportion, fill = `Influence Level`)) + 
+ggplot(combined_change_pivot, aes(x = `Change Made`, y = Proportion, fill = `Influence Level`)) + 
   geom_bar(stat = "identity", position = "stack") + expand_limits(y = 1) + 
   coord_flip() + 
   labs(
@@ -251,7 +236,7 @@ df_iterate <- data.frame(
   df_name = c("influence_ahw", "influence_cs", "influence_fetf", "influence_fipl", 
               "influence_ftf", "influence_lr", "influence_sfi", "influence_slurry", 
               "influence_trees", "influence_woodland"),
-  scheme_name = c("Animal Health and and Welfare", "Countryside Stewardship", 
+  scheme_name = c("Animal Health and Welfare", "Countryside Stewardship", 
                   "Farming in Protected Landscapes",
                   "Farming Equipment and Technology Fund", 
                   "Farming Transformation Fund","Landscape Recovery", 
@@ -340,4 +325,48 @@ ggplot(schemes_pivot1, aes(x = Scheme, y = Proportion,
   )
 
 # Save to .jpg
-ggsave("influence_on_schemes.jpg", current_heatmap, width = 11, height = 8)
+ggsave("influence_on_schemes.jpg", width = 11, height = 8)
+
+# THIS SECTION ADDS AN EXTRA COLUMN FOR AVERAGE INFLUENCE ACROSS ALL CHANGES
+
+# Append totals for each level of influence onto dataframe
+new_scheme_df <- rownames_to_column(df_schemes, var = "Scheme")
+new_scheme_df <- 
+  adorn_totals(new_scheme_df, where = "row", name = "All schemes")
+rownames(new_scheme_df) <- new_scheme_df$Scheme
+new_scheme_df$Scheme <- NULL
+new_scheme_df <- new_scheme_df[-c(1:10),]
+
+# Create a pivot table for these totals
+new_scheme_pivot <- 
+  data.frame(as.table(as.matrix(new_scheme_df, row.names = 1)))
+colnames(new_scheme_pivot) <- c("Scheme", "Influence Level", "Freq")
+
+# Append proportions onto the end of the pivot table
+new_scheme_pivot1 <- new_scheme_pivot %>%
+  mutate(`Total per scheme` = ave(Freq, Scheme, FUN = sum)) %>%
+  mutate(Proportion = (Freq/`Total per scheme`))
+
+# Bind the totals pivot together with the original pivot table
+# (The pivot table with changes separated)
+combined_scheme_pivot <- bind_rows(schemes_pivot1, new_scheme_pivot1)
+
+# Plot percentage graphs, with an extra column showing influence on all changes
+ggplot(combined_scheme_pivot, aes(x = Scheme, y = Proportion, fill = `Influence Level`)) + 
+  geom_bar(stat = "identity", position = "stack") + expand_limits(y = 1) + 
+  coord_flip() + 
+  labs(
+    title = str_wrap(
+      "Change made (or planned), and the level of influence that support received through the Resilience Fund had on them", 50),
+    x = "Change made", y = "Percentage") + 
+  scale_x_discrete(labels = label_wrap(30)) + 
+  scale_y_continuous(labels = scales::percent) + 
+  geom_text(aes(label = sprintf("%d%%", round(Proportion*100))), 
+            position = position_stack(vjust = 0.5), colour = "white") +
+  theme(axis.title.y = element_text(angle = 90, vjust = 2),
+        panel.grid.major.y = element_line(colour = "white"),
+        panel.grid.major.x = element_line(colour = "grey")
+  )
+
+# Save to .jpg
+ggsave("combined_influence_on_schemes.jpg", width = 11, height = 8)
