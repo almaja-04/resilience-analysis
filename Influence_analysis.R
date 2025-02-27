@@ -210,13 +210,25 @@ current_heatmap <-
 # Save to .jpg
 ggsave("q9_heatmap.jpg", current_heatmap, width = 11, height = 8)
 
-#############################################################
-# PLOTTING WITH "I AM A PART OF THE SCHEME" STILL IN THE DATA
-#############################################################
-
-
-
 # PREPARING QUESTION 20 FOR PLOTTING -------------------------------------------
+
+# Create a data frame for iterating across each scheme, counting influence levels
+df_iterate <- data.frame(
+  df_name = c("influence_ahw", "influence_cs", "influence_fetf", "influence_fipl", 
+              "influence_ftf", "influence_lr", "influence_sfi", "influence_slurry", 
+              "influence_trees", "influence_woodland"),
+  scheme_name = c("Animal Health and Welfare", "Countryside Stewardship", 
+                  "Farming in Protected Landscapes",
+                  "Farming Equipment and Technology Fund", 
+                  "Farming Transformation Fund","Landscape Recovery", 
+                  "Slurry Infrastructure Grants", "Sustainable Farming Incentive",
+                  "Tree Health Pilot", "Woodland Creation Offer")
+)
+
+      #################################################################
+      #   PLOTTING WITH "I AM A PART OF THE SCHEME" STILL IN THE DATA #
+      #################################################################
+
 
 # Filter for question
 current_question <- data %>% 
@@ -235,19 +247,6 @@ split_dfs <- setNames(lapply(group_names, function(group) {
 
 names(split_dfs) <- paste0("influence_", group_names)
 list2env(split_dfs, env = .GlobalEnv)
-
-# Data frame for totaling level of influence for each scheme
-df_iterate <- data.frame(
-  df_name = c("influence_ahw", "influence_cs", "influence_fetf", "influence_fipl", 
-              "influence_ftf", "influence_lr", "influence_sfi", "influence_slurry", 
-              "influence_trees", "influence_woodland"),
-  scheme_name = c("Animal Health and Welfare", "Countryside Stewardship", 
-                  "Farming in Protected Landscapes",
-                  "Farming Equipment and Technology Fund", 
-                  "Farming Transformation Fund","Landscape Recovery", 
-                  "Slurry Infrastructure Grants", "Sustainable Farming Incentive",
-                  "Tree Health Pilot", "Woodland Creation Offer")
-)
 
 # Create master dataframe to bind individual scheme data to
 df_schemes <- data.frame(
@@ -333,9 +332,10 @@ new_scheme_pivot1 <- new_scheme_pivot %>%
 # (The pivot table with changes separated)
 combined_scheme_pivot <- bind_rows(schemes_pivot1, new_scheme_pivot1)
 
-#################################################
-# REMOVE "I AM A PART OF THE SCHEME" RESPONSES
-#################################################
+
+            ##################################################
+            #  REMOVE "I AM A PART OF THE SCHEME" RESPONSES  #
+            ##################################################
 
 
 # Filter for question
@@ -438,25 +438,6 @@ new_scheme_pivot1 <- new_scheme_pivot %>%
 # Bind the totals pivot together with the original pivot table
 # (The pivot table with changes separated)
 combined_scheme_pivot_only_applied <- bind_rows(schemes_pivot1, new_scheme_pivot1)
-
-ggplot(combined_scheme_pivot_only_applied, aes(x = Scheme, y = Proportion, fill = `Influence Level`)) + 
-  geom_bar(stat = "identity", position = "stack") + expand_limits(y = 1) + 
-  coord_flip() + 
-  labs(
-    title = str_wrap(
-      "Schemes where respondents had applied, or were planning to apply, and the level of influence support received through the resilience fund had on that decision", 50),
-    x = "Change made", y = "Percentage") + 
-  scale_x_discrete(labels = label_wrap(30)) + 
-  scale_y_continuous(labels = scales::percent) + 
-  geom_text(aes(label = sprintf("%d%%", round(Proportion*100))), 
-            position = position_stack(vjust = 0.5), colour = "white") +
-  theme(axis.title.y = element_text(angle = 90, vjust = 2),
-        panel.grid.major.y = element_line(colour = "white"),
-        panel.grid.major.x = element_line(colour = "grey")
-  )
-# Save to .jpg
-ggsave("combined_influence_on_schemes_only_applied.jpg", width = 11, height = 8)
-
 
 # ITERATION TO PLOT INFLUENCE ON SCHEME APPLICATION GRAPHS ---------------------
 
