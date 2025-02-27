@@ -357,7 +357,7 @@ ggplot(combined_scheme_pivot, aes(x = Scheme, y = Proportion, fill = `Influence 
   coord_flip() + 
   labs(
     title = str_wrap(
-      "Change made (or planned), and the level of influence that support received through the Resilience Fund had on them", 50),
+      "Schemes where respondents had applied, or were planning to apply, and the level of influence support received through the resilience fund had on that decision", 50),
     x = "Change made", y = "Percentage") + 
   scale_x_discrete(labels = label_wrap(30)) + 
   scale_y_continuous(labels = scales::percent) + 
@@ -369,4 +369,4 @@ ggplot(combined_scheme_pivot, aes(x = Scheme, y = Proportion, fill = `Influence 
   )
 
 # Save to .jpg
-ggsave("combined_influence_on_schemes.jpg", width = 11, height = 8)
+ggsave("combined_influence_on_schemes_no_applieds.jpg", width = 11, height = 8)
