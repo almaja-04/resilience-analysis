@@ -161,16 +161,17 @@ new_question_pivot <-
 colnames(new_question_pivot) <- c("Change Made", "Influence Level", "Freq")
 
 # Append proportions onto the end of the pivot table
-new_question_pivot1 <- new_question_pivot %>%
+new_question_pivot_proportion <- new_question_pivot %>%
   mutate(`Total per change` = ave(Freq, `Change Made`, FUN = sum)) %>%
   mutate(Proportion = (Freq/`Total per change`))
 
 # Bind the totals pivot together with the original pivot table
 # (The pivot table with changes separated)
-combined_change_pivot <- bind_rows(current_question_pivot_props, new_question_pivot1)
+combined_change_pivot <- bind_rows(current_question_pivot_props, new_question_pivot_proportion)
 
 # Plot percentage graphs, with an extra column showing influence on all changes
-ggplot(combined_change_pivot, aes(x = `Change Made`, y = Proportion, fill = `Influence Level`)) + 
+ggplot(combined_change_pivot, aes(x = `Change Made`, y = Proportion, 
+                                  fill = `Influence Level`)) + 
   geom_bar(stat = "identity", position = "stack") + expand_limits(y = 1) + 
   coord_flip() + 
   labs(
@@ -321,13 +322,29 @@ new_scheme_pivot <-
 colnames(new_scheme_pivot) <- c("Scheme", "Influence Level", "Freq")
 
 # Append proportions onto the end of the pivot table
-new_scheme_pivot1 <- new_scheme_pivot %>%
+new_scheme_pivot_proportion <- new_scheme_pivot %>%
   mutate(`Total per scheme` = ave(Freq, Scheme, FUN = sum)) %>%
   mutate(Proportion = (Freq/`Total per scheme`))
 
 # Bind the totals pivot together with the original pivot table
 # (The pivot table with changes separated)
-combined_scheme_pivot <- bind_rows(schemes_pivot_proportion, new_scheme_pivot1)
+combined_scheme_pivot <- bind_rows(schemes_pivot_proportion, 
+                                   new_scheme_pivot_proportion)
+
+# STATS TESTING FOR Q20, ALL RESPONSES
+chisq <- chisq.test(df_schemes)
+print("Chi-square result for Q20")
+print(chisq)
+
+current_residuals <- as.data.frame(chisq$stdres)
+
+current_heatmap <- 
+  pheatmap(current_residuals, cluster_rows = FALSE, cluster_cols = FALSE, 
+           display_numbers = TRUE, main = "Standardised Residuals (all responses)", 
+           fontsize = 14, fontsize_number = 12)
+
+# Save to .jpg
+ggsave("q20_heatmap.jpg", current_heatmap, width = 11, height = 8)
 
 
             ##################################################
@@ -428,13 +445,28 @@ new_scheme_pivot <-
 colnames(new_scheme_pivot) <- c("Scheme", "Influence Level", "Freq")
 
 # Append proportions onto the end of the pivot table
-new_scheme_pivot1 <- new_scheme_pivot %>%
+new_scheme_pivot_proportion <- new_scheme_pivot %>%
   mutate(`Total per scheme` = ave(Freq, Scheme, FUN = sum)) %>%
   mutate(Proportion = (Freq/`Total per scheme`))
 
 # Bind the totals pivot together with the original pivot table
 # (The pivot table with changes separated)
-combined_scheme_pivot_only_applied <- bind_rows(schemes_pivot_proportion, new_scheme_pivot1)
+combined_scheme_pivot_only_applied <- bind_rows(schemes_pivot_proportion, new_scheme_pivot_proportion)
+
+# STATS TESTING FOR Q20, ONLY APPLIED RESPONSES
+chisq <- chisq.test(df_schemes)
+print("Chi-square result for Q20")
+print(chisq)
+
+current_residuals <- as.data.frame(chisq$stdres)
+
+current_heatmap <- 
+  pheatmap(current_residuals, cluster_rows = FALSE, cluster_cols = FALSE, 
+           display_numbers = TRUE, main = "Standardised Residuals (only applied)", 
+           fontsize = 14, fontsize_number = 12)
+
+# Save to .jpg
+ggsave("q20_heatmap_only_applied.jpg", current_heatmap, width = 11, height = 8)
 
 # ITERATION TO PLOT INFLUENCE ON SCHEME APPLICATION GRAPHS ---------------------
 
