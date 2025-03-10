@@ -20,27 +20,20 @@ change_dataframe <- data.frame(
          "q9_leave_other", "q9_other_change"),
   q10 = c("q10_grow_business", "q10_reduce_business", "q10_diversify", 
           "q10_increase_productivity", "q10_change_core_enterprise", "q10_retire", 
-          "q10_leave_sooner",)
+          "q10_leave_sooner", "q10_other_change")
 )
 
-for (i in 1:nrow(change_dataframe)) {
-  current_question <- data %>%
-    select(starts_with(c("q9_grow_business", "q10_grow_business"))) %>%
-    filter(q9_grow_business_influence == "low influence") %>%
-    select(-"q9_grow_business_influence")
-  
-}
-
-# Filter for question
+# Filter for question 10
 current_question <- data %>%
   select(starts_with(c("q9_grow_business", "q10_grow_business"))) %>%
   filter(q9_grow_business_influence == "low influence") %>%
   select(-"q9_grow_business_influence")
 
-# Remove "" from each column heading
+# Remove Q number from column headings
 colnames(current_question) <- 
   str_remove(colnames(current_question), "q10_")
 
+# Add columns to count each time frame
 current_question <- as.data.frame(t(current_question))
 current_question <- current_question %>%
   mutate("Up to 6 months sooner" = NA, "6 months-1 year sooner" = NA, 
@@ -76,7 +69,8 @@ current_question_pivot_props <- current_question_pivot %>%
   mutate(`Total per change` = ave(Freq, `Change Made`, FUN = sum)) %>%
   mutate(Proportion = (Freq/`Total per change`))
 
-
+---------------------------------------------------------------------------------------------------------------------
+  
 # Plot count graphs, in the order of total count
 ggplot(current_question_pivot, aes(x = `Change Made`, Freq, 
                                    y = Freq, fill = `Timeframe`)) + 
