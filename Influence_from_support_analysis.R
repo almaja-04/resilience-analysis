@@ -17,12 +17,10 @@ data <- read.csv("FinalSurveyData.csv")
 support_dataframe <- data.frame(
   q2 = c("q2_webinars", "q2_discussion_group", "q2_one_farm_visit", 
          "q2_multiple_farm_visit", "q2_business_plan", "q2_report", 
-         "q2_carbon_audit", "q2_scheme_advice", "q2_scheme_application", 
-         "q2_1other"),
+         "q2_carbon_audit", "q2_scheme_advice", "q2_scheme_application"),
   rename = c("Webinar", "Discussion Group", "One Farm Visit", 
              "Multiple Farm Visits", "Develop a Business Plan", "Report", 
-             "Carbon Audit", "Scheme Advice", "Help With a Scheme Application", 
-             "Other")
+             "Carbon Audit", "Scheme Advice", "Help With a Scheme Application")
 )
 
 support_pivot_props_all <- data.frame()
@@ -34,7 +32,8 @@ for (i in 1:nrow(support_dataframe)) {
   
   current_support <- data %>%
     select(support_dataframe[i,1], starts_with("q8_")) %>%
-    filter(!!col_name == 1)
+    filter(!!col_name == 1) %>%
+    select(-"q8_other")
   
   names(current_support)[1] <- "Support Type"
   
@@ -48,7 +47,7 @@ for (i in 1:nrow(support_dataframe)) {
       "Diversify into non-farming areas", "Increase productivity", 
       "Change core agricultural enterprises", 
       "Leave farming (retire or pass onto next generation)", 
-      "Leave farming (other reasons)", "Other")
+      "Leave farming (other reasons)")
   
   support_pivot <- data.frame(as.table(as.matrix(current_support, row.names = 1)))
   colnames(support_pivot) <- c("Support Type", "Change Made", "Freq")
@@ -84,6 +83,31 @@ ggplot(support_pivot_props_all, aes(x = reorder(`Support Type`, `Total per suppo
         panel.grid.major.x = element_line(colour = "grey")
         
   )
+
+ggsave("Support_and_changes.jpg", width = 11, height = 8)
+
+# Percentage graph
+ggplot(support_pivot_props_all, aes(x = fct_rev(`Support Type`), y = Proportion, fill = `Change Made`)) + 
+  geom_bar(stat = "identity", position = "stack") + 
+  coord_flip() + expand_limits(y = 1) + 
+  labs(
+    title = str_wrap(
+      "Types of support beneficiaries received through the Resilience Fund, and the changes they went on to make", 50), 
+    x = "Support Type Received", y = "Percentage") + 
+  scale_x_discrete(labels = label_wrap(30)) + 
+  scale_y_continuous(labels = scales::percent) + 
+  geom_text(aes(label = sprintf("%d%%", round(Proportion*100))), 
+            position = position_stack(vjust=0.5), colour = "white") + 
+  scale_fill_manual(values = 
+                      c("#C8C8C8", "#F0C571", "#59A89C", "#0B81A2", "#E25759", 
+                                 "#9D2C00", "#7E4794", "#36B700")) +
+  theme(axis.title.y = element_text(angle = 90, vjust = 2),
+        panel.grid.major.y = element_line(colour = "white"),
+        panel.grid.major.x = element_line(colour = "grey")
+        
+  )
+
+ggsave("Support_and_changes_percent.jpg", width = 11, height = 8)
 
 # TABLE FOR LIKELIHOOD OF INFLUENCE ON SPECIFIC CHANGES ------------------------
 
