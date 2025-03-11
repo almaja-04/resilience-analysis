@@ -18,11 +18,13 @@ support_dataframe <- data.frame(
   q2 = c("q2_webinars", "q2_discussion_group", "q2_one_farm_visit", 
          "q2_multiple_farm_visit", "q2_business_plan", "q2_report", 
          "q2_carbon_audit", "q2_scheme_advice", "q2_scheme_application"),
-  rename = c("Webinar", "Discussion Group", "One Farm Visit", 
-             "Multiple Farm Visits", "Develop a Business Plan", "Report", 
-             "Carbon Audit", "Scheme Advice", "Help With a Scheme Application")
+  rename = c("Webinar", "Discussion Group/Presentation", "One Farm Visit", 
+             "Multiple Farm Visits", "Help Developing a Business Plan", 
+             "Received a Report", "Carbon Audit", "Scheme Advice", 
+             "Help With a Scheme Application")
 )
 
+df_support <- data.frame()
 support_pivot_props_all <- data.frame()
 
 # TABLE FOR LIKELIHOOD OF MAKING SPECIFIC CHANGES ------------------------------
@@ -49,6 +51,8 @@ for (i in 1:nrow(support_dataframe)) {
       "Leave farming (retire or pass onto next generation)", 
       "Leave farming (other reasons)")
   
+  df_support <- bind_rows(df_support, current_support)
+  
   support_pivot <- data.frame(as.table(as.matrix(current_support, row.names = 1)))
   colnames(support_pivot) <- c("Support Type", "Change Made", "Freq")
   
@@ -61,6 +65,31 @@ for (i in 1:nrow(support_dataframe)) {
     bind_rows(support_pivot_props_all, support_pivot_props)
   
 }
+
+# THIS SECTION ADDS AN EXTRA COLUMN FOR CHANGES ACROSS ALL SUPPORT TYPES
+
+# Append totals onto dataframe
+new_support_dataframe <- rownames_to_column(df_support, var = "Support Type")
+new_support_dataframe <- 
+  adorn_totals(new_support_dataframe, where = "row", name = "All Support Types")
+rownames(new_support_dataframe) <- new_support_dataframe$Support
+new_support_dataframe$`Support Type` <- NULL
+new_support_dataframe <- tail(new_support_dataframe, 1)
+
+# Create a pivot table for these totals
+new_support_pivot <- 
+  data.frame(as.table(as.matrix(new_support_dataframe, row.names = 1)))
+colnames(new_support_pivot) <- c("Support Type", "Change Made", "Freq")
+
+# Append proportions onto the end of the pivot table
+new_support_pivot_proportion <- new_support_pivot %>%
+  mutate(`Total per support` = ave(Freq, `Support Type`, FUN = sum)) %>%
+  mutate(Proportion = (Freq/`Total per support`))
+
+# Bind the totals pivot together with the original pivot table
+# (The pivot table with changes separated)
+combined_support_pivot <- bind_rows(new_support_pivot_proportion, 
+                                    support_pivot_props_all)
 
 # GRAPHS FOR LIKELIHOOD OF MAKING SPECIFIC CHANGES -----------------------------
 
@@ -87,7 +116,7 @@ ggplot(support_pivot_props_all, aes(x = reorder(`Support Type`, `Total per suppo
 ggsave("Support_and_changes.jpg", width = 11, height = 8)
 
 # Percentage graph
-ggplot(support_pivot_props_all, aes(x = fct_rev(`Support Type`), y = Proportion, fill = `Change Made`)) + 
+ggplot(combined_support_pivot, aes(x = fct_rev(`Support Type`), y = Proportion, fill = `Change Made`)) + 
   geom_bar(stat = "identity", position = "stack") + 
   coord_flip() + expand_limits(y = 1) + 
   labs(
@@ -107,7 +136,9 @@ ggplot(support_pivot_props_all, aes(x = fct_rev(`Support Type`), y = Proportion,
         
   )
 
-ggsave("Support_and_changes_percent.jpg", width = 11, height = 8)
+ggsave("Support_and_changes_percent.jpg", width = 15, height = 8)
+
+
 
 # TABLE FOR LIKELIHOOD OF INFLUENCE ON SPECIFIC CHANGES ------------------------
 
