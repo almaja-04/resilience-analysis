@@ -105,7 +105,10 @@ for (i in 1:nrow(change_dataframe)) {
 df_time_plot <- df_time %>%
   filter(Freq != 0)
 
-# PLOT GRAPH -------------------------------------------------------------------
+# Filtering out changes where n < 30
+df_time_plot_filtered <- df_time_plot %>% filter(`Total per change` > 10)
+
+# PLOT COUNT GRAPHS ------------------------------------------------------------
 
 # Plot count graphs, in the order of total count
 ggplot(df_time_plot, aes(x = reorder(`Change Made`, `Total per change`), 
@@ -126,7 +129,26 @@ ggplot(df_time_plot, aes(x = reorder(`Change Made`, `Total per change`),
 
 ggsave("Changes_brought_forward.jpg", width = 11, height = 8)
 
-# PLOT PERCENTAGE GRAPH --------------------------------------------------------
+# Plot count graphs, in the order of total count (filtered)
+ggplot(df_time_plot_filtered, aes(x = reorder(`Change Made`, `Total per change`), 
+                         y = Freq, fill = `Timeframe`)) + 
+  geom_bar(stat = "identity", position = "stack") + 
+  coord_flip() + expand_limits(y = 65) + 
+  labs(
+    title = str_wrap(
+      "How much sooner changes made by beneficiaires were brought forward because of support received through the Resilience Fund", 50), 
+    x = "Change made", y = "Count") + 
+  scale_x_discrete(labels = label_wrap(30)) + 
+  geom_text(aes(label = Freq), position = position_stack(vjust=0.5), colour = "white") + 
+  theme(axis.title.y = element_text(angle = 90, vjust = 2),
+        panel.grid.major.y = element_line(colour = "white"),
+        panel.grid.major.x = element_line(colour = "grey")
+        
+  )
+
+ggsave("Changes_brought_forward_filtered.jpg", width = 11, height = 8)
+
+# PLOT PERCENTAGE GRAPHS -------------------------------------------------------
 
 #Create a dataframe that orders changes in terms of timeframe
 # and appends this onto main pivot table
@@ -143,7 +165,10 @@ df_time <- df_time %>%
 df_time_plot <- df_time %>%
   filter(Freq != 0)
 
-# Plot count graphs, in the order of total count
+df_time_plot_filtered <- df_time_plot %>%
+  filter(`Total per change` > 10)
+
+# Plot percentage graph
 ggplot(df_time_plot, aes(x = `Change Made`, y = Proportion, fill = `Timeframe`)) + 
   geom_bar(stat = "identity", position = "stack") + 
   coord_flip() + expand_limits(y = 1) + 
@@ -162,6 +187,26 @@ ggplot(df_time_plot, aes(x = `Change Made`, y = Proportion, fill = `Timeframe`))
   )
 
 ggsave("Changes_brought_forward_percent.jpg", width = 11, height = 8)
+
+# Plot percentage graph
+ggplot(df_time_plot_filtered, aes(x = `Change Made`, y = Proportion, fill = `Timeframe`)) + 
+  geom_bar(stat = "identity", position = "stack") + 
+  coord_flip() + expand_limits(y = 1) + 
+  labs(
+    title = str_wrap(
+      "How much sooner changes made by beneficiaires were brought forward because of support received through the Resilience Fund", 50), 
+    x = "Change made", y = "Count") + 
+  scale_x_discrete(labels = label_wrap(30)) + 
+  scale_y_continuous(labels = scales::percent) + 
+  geom_text(aes(label = sprintf("%d%%", round(Proportion*100))), 
+            position = position_stack(vjust=0.5), colour = "white") + 
+  theme(axis.title.y = element_text(angle = 90, vjust = 2),
+        panel.grid.major.y = element_line(colour = "white"),
+        panel.grid.major.x = element_line(colour = "grey")
+        
+  )
+
+ggsave("Changes_brought_forward_percent_filtered.jpg", width = 11, height = 8)
 
 # CREATE TABLES FOR PLOTTING (SCHEMES) -----------------------------------------
 
@@ -229,6 +274,10 @@ for (i in 1:nrow(schemes_dataframe)) {
 df_schemes_plot <- df_schemes %>%
   filter(Freq != 0)
 
+# Filter where n < 30
+df_schemes_plot_filtered <- df_schemes_plot %>%
+  filter(`Total per scheme` > 30)
+
 # PLOT GRAPH (SCHEMES) ---------------------------------------------------------
 
 # Plot count graphs, in the order of total count
@@ -250,6 +299,25 @@ ggplot(df_schemes_plot, aes(x = reorder(Scheme, `Total per scheme`),
 
 ggsave("Schemes_brought_forward.jpg", width = 11, height = 8)
 
+# Plot count graphs, in the order of total count
+ggplot(df_schemes_plot_filtered, aes(x = reorder(Scheme, `Total per scheme`), 
+                            y = Freq, fill = `Timeframe`)) + 
+  geom_bar(stat = "identity", position = "stack") + 
+  coord_flip() + expand_limits(y = 65) + 
+  labs(
+    title = str_wrap(
+      "How much later applications (or plans to apply) to schemes would have happened, if not for support recieved through the Resilience Fund", 50), 
+    x = "Change made", y = "Count") + 
+  scale_x_discrete(labels = label_wrap(30)) + 
+  geom_text(aes(label = Freq), position = position_stack(vjust=0.5), colour = "white") + 
+  theme(axis.title.y = element_text(angle = 90, vjust = 2),
+        panel.grid.major.y = element_line(colour = "white"),
+        panel.grid.major.x = element_line(colour = "grey")
+        
+  )
+
+ggsave("Schemes_brought_forward_filtered.jpg", width = 11, height = 8)
+
 # PLOT PERCENTAGE GRAPH (SCHEMES) ----------------------------------------------
 
 #Create a dataframe that orders changes in terms of timeframe
@@ -265,6 +333,9 @@ df_schemes <- df_schemes %>%
 # Remove rows where count = 0 for plotting
 df_schemes_plot <- df_schemes %>%
   filter(Freq != 0)
+
+df_schemes_plot_filtered <- df_schemes_plot %>%
+  filter(`Total per scheme` > 30)
 
 # Plot count graphs, in the order of total count
 ggplot(df_schemes_plot, aes(x = Scheme, y = Proportion, fill = `Timeframe`)) + 
@@ -285,3 +356,23 @@ ggplot(df_schemes_plot, aes(x = Scheme, y = Proportion, fill = `Timeframe`)) +
   )
 
 ggsave("Schemes_brought_forward_percent.jpg", width = 11, height = 8)
+
+# Plot count graphs, in the order of total count
+ggplot(df_schemes_plot_filtered, aes(x = Scheme, y = Proportion, fill = `Timeframe`)) + 
+  geom_bar(stat = "identity", position = "stack") + 
+  coord_flip() + expand_limits(y = 1) + 
+  labs(
+    title = str_wrap(
+      "How much later applications (or plans to apply) to schemes would have happened, if not for support recieved through the Resilience Fund", 50), 
+    x = "Change made", y = "Count") + 
+  scale_x_discrete(labels = label_wrap(30)) + 
+  scale_y_continuous(labels = scales::percent) + 
+  geom_text(aes(label = sprintf("%d%%", round(Proportion*100))), 
+            position = position_stack(vjust=0.5), colour = "white") + 
+  theme(axis.title.y = element_text(angle = 90, vjust = 2),
+        panel.grid.major.y = element_line(colour = "white"),
+        panel.grid.major.x = element_line(colour = "grey")
+        
+  )
+
+ggsave("Schemes_brought_forward_percent_filtered.jpg", width = 11, height = 8)
