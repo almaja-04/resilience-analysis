@@ -35,12 +35,12 @@ support_dataframe <- data.frame(
                 "Didn't Receive a Report", "No Carbon Audit", 
                 "Didn't receive Scheme Advice", 
                 "Didn't receive Help With a Scheme Application"),
-  new_df_stats = c("influence_webinars_count", "influence_discussion_group_count", 
-                   "influence_one_farm_visit_count", 
-                   "influence_multiple_farm_visit_count", 
-                   "influence_business_plan_count", "influence_report_count", 
-                   "influence_carbon_audit_count", "influence_scheme_advice_count", 
-                   "influence_scheme_application_count")
+  new_df_stats = c("count_influence_webinars", "count_influence_discussion_group", 
+                   "count_influence_one_farm_visit", 
+                   "count_influence_multiple_farm_visit", 
+                   "count_influence_business_plan", "count_influence_report", 
+                   "count_influence_carbon_audit", "count_influence_scheme_advice", 
+                   "count_influence_scheme_application")
 )
 
 col_names <- 
@@ -194,6 +194,21 @@ for (i in 1:nrow(support_dataframe)) {
 
 # STATS TESTING ----------------------------------------------------------------
 
+for (i in 1:nrow(support_dataframe)) {
+  chisq <- chisq.test(get(support_dataframe[i,5]))
+  print(paste0("Chi-squared test: ", support_dataframe[i,2]))
+  print(chisq)
+  
+  current_residuals <- as.data.frame(chisq$stdres)
+  
+  current_heatmap <- 
+    pheatmap(current_residuals, cluster_rows = FALSE, cluster_cols = FALSE, 
+             display_numbers = TRUE, main = "Standardised Residuals", 
+             fontsize = 14, fontsize_number = 12)
+  
+  # Save to .jpg
+  ggsave(paste0(support_dataframe[i,3], "_heatmap.jpg"), current_heatmap, width = 11, height = 8)
+}
 
 
 
