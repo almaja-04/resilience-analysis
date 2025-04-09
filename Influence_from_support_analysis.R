@@ -64,12 +64,16 @@ influence_scheme_advice <- data.frame(matrix(nrow = 4, ncol = 5))
 colnames(influence_scheme_advice) <- col_names
 influence_scheme_application <- data.frame(matrix(nrow = 4, ncol = 5))
 colnames(influence_scheme_application) <- col_names
+influence_all <- data.frame(matrix(nrow = 4, ncol = 5))
+colnames(influence_all) <- col_names
 
 # CREATE A TABLE ---------------------------------------------------------------
 
 # Iteration to calculate influence from people who did receive the support
 for (i in 1:nrow(support_dataframe)) {
   col_name <- sym(support_dataframe[i,1])
+  
+  # First half of iteration for data on those who DID receive the support
   
   current_support_yes <- data %>%
     select(support_dataframe[i,1], "influence_level_q9") %>%
@@ -114,9 +118,12 @@ for (i in 1:nrow(support_dataframe)) {
     mutate(`Total responses` = ave(Freq, `Support type`, FUN = sum)) %>%
     mutate(Proportion = (Freq/`Total responses`))
   
-  # Bind this first dataframe onto master frame
+  # Bind this first dataframe onto master frames
   assign(support_dataframe[i,3], bind_rows(get(support_dataframe[i,3]), current_support_yes_pivot_props))
+  # Dataframe just for everyone who did receive support across all types
+  influence_all <- bind_rows(influence_all, current_support_yes_pivot_props)
   
+  # Second half of this iteration for those who DIDN'T receive this support
   current_support_no <- data %>%
     select(support_dataframe[i,1], "influence_level_q9") %>%
     filter(!!col_name == 0) %>%
@@ -168,8 +175,22 @@ for (i in 1:nrow(support_dataframe)) {
   assign(support_dataframe[i,5], rbind(current_support_yes, current_support_no))
 }
 
+# Remove rows with NAs
+influence_all <- influence_all[-c(1:4), ]
+
+# Order support types in "influence_all" in terms of level of influence
+reordered_influence_all <- influence_all %>%
+  filter(Influence %in% c("High influence", "Medium influence")) %>%
+  group_by(`Support type`) %>%
+  summarise(Total_high = sum(Proportion, na.rm = TRUE)) %>%
+  arrange(Total_high)
+influence_all <- influence_all %>%
+  mutate(`Support type` = factor(`Support type`, levels = 
+                                   reordered_influence_all$`Support type`))
+
 # PLOT GRAPHS ------------------------------------------------------------------
 
+# Graphs, support type by support type
 for (i in 1:nrow(support_dataframe)) {
   to_plot <- get(support_dataframe[i,3])
   
@@ -179,7 +200,7 @@ for (i in 1:nrow(support_dataframe)) {
     scale_y_continuous(labels = percent) +  scale_x_discrete(labels = label_wrap(15)) + 
     geom_text(aes(label = sprintf("%d%%", round(Proportion * 100))), 
               position = position_stack(vjust = 0.5), colour = "white") + 
-    labs(title = str_wrap("How did receiving/not receiving this support type affect the overall influence of the Resilience fund on changes made?", 50), 
+    labs(title = str_wrap("How did receiving/not receiving this support type affect the influence of the Resilience fund on at least one business change made or planned?", 50), 
          x = "Support type", y = "Percentage") +
     theme(
       axis.title.y = element_text(angle = 90, vjust = 1), 
@@ -191,6 +212,24 @@ for (i in 1:nrow(support_dataframe)) {
   # Save to .jpg
   ggsave(paste0(support_dataframe[i,3], ".jpg"), width = 11, height = 8)
 }
+
+# Graphs across all support types
+ggplot(influence_all, aes(x = `Support type`, y = Proportion, fill = `Influence`)) + 
+  geom_bar(stat = "identity", position = "stack") + coord_flip() + 
+  scale_y_continuous(labels = percent) +  scale_x_discrete(labels = label_wrap(25)) + 
+  geom_text(aes(label = sprintf("%d%%", round(Proportion * 100))), 
+            position = position_stack(vjust = 0.5), colour = "white") + 
+  labs(title = str_wrap("How did receiving each support type affect the influence of the Resilience fund on at least one business change made or planned?", 50), 
+       x = "Support type", y = "Percentage") +
+  theme(
+    axis.title.y = element_text(angle = 90, vjust = 1), 
+    plot.title = element_text(face = "bold", vjust = -2),
+    panel.grid.major.y = element_line(colour = "white"),
+    panel.grid.major.x = element_line(colour = "grey")
+  )
+  
+  # Save to .jpg
+  ggsave(paste0("influence_from_all.jpg"), width = 11, height = 8)
 
 # STATS TESTING ----------------------------------------------------------------
 
@@ -211,7 +250,7 @@ for (i in 1:nrow(support_dataframe)) {
 }
 
 
-
+influence_all <- influence_all[-c(1:4), ]
 
 
 
