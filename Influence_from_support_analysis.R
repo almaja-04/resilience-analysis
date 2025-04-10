@@ -67,7 +67,7 @@ colnames(influence_scheme_application) <- col_names
 influence_all <- data.frame(matrix(nrow = 4, ncol = 5))
 colnames(influence_all) <- col_names
 
-# CREATE A TABLE ---------------------------------------------------------------
+# CREATE A TABLE FOR CHANGES ---------------------------------------------------
 
 # Iteration to calculate influence from people who did receive the support
 for (i in 1:nrow(support_dataframe)) {
@@ -124,6 +124,7 @@ for (i in 1:nrow(support_dataframe)) {
   influence_all <- bind_rows(influence_all, current_support_yes_pivot_props)
   
   # Second half of this iteration for those who DIDN'T receive this support
+  
   current_support_no <- data %>%
     select(support_dataframe[i,1], "influence_level_q9") %>%
     filter(!!col_name == 0) %>%
@@ -175,9 +176,6 @@ for (i in 1:nrow(support_dataframe)) {
   assign(support_dataframe[i,5], rbind(current_support_yes, current_support_no))
 }
 
-# Remove rows with NAs
-influence_all <- influence_all[-c(1:4), ]
-
 # Order support types in "influence_all" in terms of level of influence
 reordered_influence_all <- influence_all %>%
   filter(Influence %in% c("High influence", "Medium influence")) %>%
@@ -188,7 +186,9 @@ influence_all <- influence_all %>%
   mutate(`Support type` = factor(`Support type`, levels = 
                                    reordered_influence_all$`Support type`))
 
-# PLOT GRAPHS ------------------------------------------------------------------
+influence_all <- influence_all[-c(1:4), ]
+
+# PLOT GRAPHS FOR CHANGES ------------------------------------------------------
 
 # Graphs, support type by support type
 for (i in 1:nrow(support_dataframe)) {
@@ -210,7 +210,8 @@ for (i in 1:nrow(support_dataframe)) {
     )
   
   # Save to .jpg
-  ggsave(paste0(support_dataframe[i,3], ".jpg"), width = 11, height = 8)
+  ggsave(paste0(support_dataframe[i,3], ".jpg"), 
+         path = "./influence_on_changes", width = 11, height = 8)
 }
 
 # Graphs across all support types
@@ -229,13 +230,14 @@ ggplot(influence_all, aes(x = `Support type`, y = Proportion, fill = `Influence`
   )
   
   # Save to .jpg
-  ggsave(paste0("influence_from_all.jpg"), width = 11, height = 8)
+  ggsave(paste0("influence_from_all.jpg"), path = "./influence_on_changes", 
+         width = 11, height = 8)
 
-# STATS TESTING ----------------------------------------------------------------
+# STATS TESTING FOR CHANGES ----------------------------------------------------
 
 for (i in 1:nrow(support_dataframe)) {
   chisq <- chisq.test(get(support_dataframe[i,5]))
-  print(paste0("Chi-squared test: ", support_dataframe[i,2]))
+  print(paste0("Changes: Chi-squared test: ", support_dataframe[i,2]))
   print(chisq)
   
   current_residuals <- as.data.frame(chisq$stdres)
@@ -246,16 +248,209 @@ for (i in 1:nrow(support_dataframe)) {
              fontsize = 14, fontsize_number = 12)
   
   # Save to .jpg
-  ggsave(paste0(support_dataframe[i,3], "_heatmap.jpg"), current_heatmap, width = 11, height = 8)
+  ggsave(paste0(support_dataframe[i,3], "_heatmap.jpg"), current_heatmap, 
+         path = "./influence_on_changes", width = 11, height = 8)
 }
 
+# CREATE A TABLE FOR SCHEMES ---------------------------------------------------
+  
+  # Remakes all of the dataframes for next iteration
+  influence_webinars <- data.frame(matrix(nrow = 4, ncol = 5))
+  colnames(influence_webinars) <- col_names
+  influence_discussion_group <- data.frame(matrix(nrow = 4, ncol = 5))
+  colnames(influence_discussion_group) <- col_names
+  influence_one_farm_visit <- data.frame(matrix(nrow = 4, ncol = 5))
+  colnames(influence_one_farm_visit) <- col_names
+  influence_multiple_farm_visit <- data.frame(matrix(nrow = 4, ncol = 5))
+  colnames(influence_multiple_farm_visit) <- col_names
+  influence_business_plan <- data.frame(matrix(nrow = 4, ncol = 5))
+  colnames(influence_business_plan) <- col_names
+  influence_report <- data.frame(matrix(nrow = 4, ncol = 5))
+  colnames(influence_report) <- col_names
+  influence_carbon_audit <- data.frame(matrix(nrow = 4, ncol = 5))
+  colnames(influence_carbon_audit) <- col_names
+  influence_scheme_advice <- data.frame(matrix(nrow = 4, ncol = 5))
+  colnames(influence_scheme_advice) <- col_names
+  influence_scheme_application <- data.frame(matrix(nrow = 4, ncol = 5))
+  colnames(influence_scheme_application) <- col_names
+  influence_all <- data.frame(matrix(nrow = 4, ncol = 5))
+  colnames(influence_all) <- col_names
 
+# Iteration to calculate influence from people who did receive the support
+for (i in 1:nrow(support_dataframe)) {
+  col_name <- sym(support_dataframe[i,1])
+  
+  # First half of iteration for data on those who DID receive the support
+  
+  current_support_yes <- data %>%
+    select(support_dataframe[i,1], "influence_level_q20") %>%
+    filter(!!col_name == 1) %>%
+    filter(influence_level_q20 != "") %>%
+    mutate(across(1, ~ support_dataframe[i,2])) %>%
+    select(-paste0(support_dataframe[i,1]))
+  
+  # Add columns to count each time frame
+  current_support_yes <- as.data.frame(t(current_support_yes))
+  current_support_yes <- current_support_yes %>%
+    mutate("High influence" = NA, "Low influence" = NA, "No influence" = NA)
+  
+  # Add counts for each level of influence for each response
+  current_support_yes[] <- lapply(current_support_yes, as.character)
+  
+  # Count the number of each influence
+  current_support_yes$`High influence` <- 
+    rowSums(current_support_yes == "high influence", na.rm = TRUE)
+  current_support_yes$`Low influence` <- 
+    rowSums(current_support_yes == "low influence", na.rm = TRUE)
+  current_support_yes$`No influence` <- 
+    rowSums(current_support_yes == "no influence", na.rm = TRUE)
+  
+  # Keeping columns only with counts
+  current_support_yes <- 
+    current_support_yes[, tail(colnames(current_support_yes), 3)]
+  
+  # Change row index for clarity
+  rownames(current_support_yes) <- paste0(support_dataframe[i,2])
+  
+  # Create a pivot table
+  current_support_yes_pivot <- 
+    data.frame(as.table(as.matrix(current_support_yes, row.names = 1)))
+  colnames(current_support_yes_pivot) <- c("Support type", "Influence", "Freq")
+  
+  # Append proportions onto the end of the pivot table
+  current_support_yes_pivot_props <- current_support_yes_pivot %>%
+    mutate(`Total responses` = ave(Freq, `Support type`, FUN = sum)) %>%
+    mutate(Proportion = (Freq/`Total responses`))
+  
+  # Bind this first dataframe onto master frames
+  assign(support_dataframe[i,3], bind_rows(get(support_dataframe[i,3]), current_support_yes_pivot_props))
+  # Dataframe just for everyone who did receive support across all types
+  influence_all <- bind_rows(influence_all, current_support_yes_pivot_props)
+  
+  # Second half of this iteration for those who DIDN'T receive this support
+  current_support_no <- data %>%
+    select(support_dataframe[i,1], "influence_level_q20") %>%
+    filter(!!col_name == 0) %>%
+    filter(influence_level_q20 != "") %>%
+    mutate(across(1, ~ support_dataframe[i,2])) %>%
+    select(-paste0(support_dataframe[i,1]))
+  
+  # Add columns to count each time frame
+  current_support_no <- as.data.frame(t(current_support_no))
+  current_support_no <- current_support_no %>%
+    mutate("High influence" = NA, "No influence" = NA)
+  
+  # Add counts for each level of influence for each response
+  current_support_no[] <- lapply(current_support_no, as.character)
+  
+  # Count the number of each influence
+  current_support_no$`High influence` <- 
+    rowSums(current_support_no == "high influence", na.rm = TRUE)
+  current_support_no$`Low influence` <- 
+    rowSums(current_support_no == "low influence", na.rm = TRUE)
+  current_support_no$`No influence` <- 
+    rowSums(current_support_no == "no influence", na.rm = TRUE)
+  
+  # Keeping columns only with counts
+  current_support_no <- 
+    current_support_no[, tail(colnames(current_support_no), 3)]
+  
+  # Change row index for clarity
+  rownames(current_support_no) <- paste0(support_dataframe[i,4])
+  
+  # Create a pivot table
+  current_support_no_pivot <- 
+    data.frame(as.table(as.matrix(current_support_no, row.names = 1)))
+  colnames(current_support_no_pivot) <- c("Support type", "Influence", "Freq")
+  
+  # Append proportions onto the end of the pivot table
+  current_support_no_pivot_props <- current_support_no_pivot %>%
+    mutate(`Total responses` = ave(Freq, `Support type`, FUN = sum)) %>%
+    mutate(Proportion = (Freq/`Total responses`))
+  
+  # Bind the two dataframes together for plotting
+  assign(support_dataframe[i,3], bind_rows(get(support_dataframe[i,3]), current_support_no_pivot_props))
+  assign(support_dataframe[i,3], get(support_dataframe[i,3])[-c(1:4), ])
+  
+  # Bind two dataframes together for statistical testing
+  assign(support_dataframe[i,5], rbind(current_support_yes, current_support_no))
+}
+  
 influence_all <- influence_all[-c(1:4), ]
 
+# Order support types in "influence_all" in terms of level of influence
+reordered_influence_all <- influence_all %>%
+  filter(Influence %in% c("High influence")) %>%
+  group_by(`Support type`) %>%
+  summarise(Total_high = sum(Proportion, na.rm = TRUE)) %>%
+  arrange(Total_high)
+influence_all <- influence_all %>%
+  mutate(`Support type` = factor(`Support type`, levels = 
+                                   reordered_influence_all$`Support type`))
 
+# PLOT GRAPHS FOR SCHEMES ------------------------------------------------------
 
+# Graphs, support type by support type
+for (i in 1:nrow(support_dataframe)) {
+  to_plot <- get(support_dataframe[i,3])
+  
+  current_graph <- ggplot(to_plot, 
+                          aes(x = fct_rev(`Support type`), y = Proportion, fill = `Influence`)) + 
+    geom_bar(stat = "identity", position = "stack") + coord_flip() + 
+    scale_y_continuous(labels = percent) +  scale_x_discrete(labels = label_wrap(15)) + 
+    geom_text(aes(label = sprintf("%d%%", round(Proportion * 100))), 
+              position = position_stack(vjust = 0.5), colour = "white") + 
+    labs(title = str_wrap("How did receiving/not receiving this support type affect the influence of the Resilience fund on at least one scheme application submitted or planned?", 50), 
+         x = "Support type", y = "Percentage") +
+    theme(
+      axis.title.y = element_text(angle = 90, vjust = 1), 
+      plot.title = element_text(face = "bold", vjust = -2),
+      panel.grid.major.y = element_line(colour = "white"),
+      panel.grid.major.x = element_line(colour = "grey")
+    )
+  
+# Save to .jpg
+  ggsave(paste0(support_dataframe[i,3], ".jpg"), path = "./influence_on_schemes", 
+         width = 11, height = 8)
+}
 
+# Graphs across all support types
+ggplot(influence_all, aes(x = `Support type`, y = Proportion, fill = `Influence`)) + 
+  geom_bar(stat = "identity", position = "stack") + coord_flip() + 
+  scale_y_continuous(labels = percent) +  scale_x_discrete(labels = label_wrap(25)) + 
+  geom_text(aes(label = sprintf("%d%%", round(Proportion * 100))), 
+            position = position_stack(vjust = 0.5), colour = "white") + 
+  labs(title = str_wrap("How did receiving each support type affect the influence of the Resilience fund on at least one scheme application submitted or planned?", 50), 
+       x = "Support type", y = "Percentage") +
+  theme(
+    axis.title.y = element_text(angle = 90, vjust = 1), 
+    plot.title = element_text(face = "bold", vjust = -2),
+    panel.grid.major.y = element_line(colour = "white"),
+    panel.grid.major.x = element_line(colour = "grey")
+  )
 
+# Save to .jpg
+ggsave(paste0("influence_from_all.jpg"), path = "influence_on_schemes", 
+       width = 11, height = 8)
+
+# STATS TESTING FOR SCHEMES ----------------------------------------------------
+
+for (i in 1:nrow(support_dataframe)) {
+  chisq <- chisq.test(get(support_dataframe[i,5]))
+  print(paste0("Schemes: Chi-squared test: ", support_dataframe[i,2]))
+  print(chisq)
+  
+  current_residuals <- as.data.frame(chisq$stdres)
+  
+  current_heatmap <- 
+    pheatmap(current_residuals, cluster_rows = FALSE, cluster_cols = FALSE, 
+             display_numbers = TRUE, main = "Standardised Residuals", 
+             fontsize = 14, fontsize_number = 12)
+  
+  # Save to .jpg
+  ggsave(paste0(support_dataframe[i,3], "_heatmap.jpg"), current_heatmap, 
+         path = "./influence_on_schemes", width = 11, height = 8)
+}
 
 
 
@@ -370,3 +565,4 @@ influence_all <- influence_all[-c(1:4), ]
 #current_support <- data %>%
 #  select("q2_webinars", starts_with("q9_")) %>%
 #  filter(q2_webinars == 1)
+
