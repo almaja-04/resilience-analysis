@@ -178,10 +178,10 @@ for (i in 1:nrow(support_dataframe)) {
 
 # Order support types in "influence_all" in terms of level of influence
 reordered_influence_all <- influence_all %>%
-  filter(Influence %in% c("High influence", "Medium influence")) %>%
+  filter(Influence == "No influence") %>%
   group_by(`Support type`) %>%
-  summarise(Total_high = sum(Proportion, na.rm = TRUE)) %>%
-  arrange(Total_high)
+  summarise(Total_none = sum(Proportion, na.rm = TRUE)) %>%
+  arrange(Total_none)
 influence_all <- influence_all %>%
   mutate(`Support type` = factor(`Support type`, levels = 
                                    reordered_influence_all$`Support type`))
@@ -195,7 +195,7 @@ for (i in 1:nrow(support_dataframe)) {
   to_plot <- get(support_dataframe[i,3])
   
   current_graph <- ggplot(to_plot, 
-         aes(x = fct_rev(`Support type`), y = Proportion, fill = `Influence`)) + 
+                          aes(x = fct_rev(`Support type`), y = Proportion, fill = `Influence`)) + 
     geom_bar(stat = "identity", position = "stack") + coord_flip() + 
     scale_y_continuous(labels = percent) +  scale_x_discrete(labels = label_wrap(15)) + 
     geom_text(aes(label = sprintf("%d%%", round(Proportion * 100))), 
@@ -214,7 +214,7 @@ for (i in 1:nrow(support_dataframe)) {
          path = "./influence_on_changes", width = 11, height = 8)
 }
 
-# Graphs across all support types
+# Graph across all support types
 ggplot(influence_all, aes(x = `Support type`, y = Proportion, fill = `Influence`)) + 
   geom_bar(stat = "identity", position = "stack") + coord_flip() + 
   scale_y_continuous(labels = percent) +  scale_x_discrete(labels = label_wrap(25)) + 
@@ -228,10 +228,10 @@ ggplot(influence_all, aes(x = `Support type`, y = Proportion, fill = `Influence`
     panel.grid.major.y = element_line(colour = "white"),
     panel.grid.major.x = element_line(colour = "grey")
   )
-  
-  # Save to .jpg
-  ggsave(paste0("influence_from_all.jpg"), path = "./influence_on_changes", 
-         width = 11, height = 8)
+
+# Save to .jpg
+ggsave(paste0("influence_from_all.jpg"), path = "./influence_on_changes", 
+       width = 11, height = 8)
 
 # STATS TESTING FOR CHANGES ----------------------------------------------------
 
@@ -565,4 +565,3 @@ for (i in 1:nrow(support_dataframe)) {
 #current_support <- data %>%
 #  select("q2_webinars", starts_with("q9_")) %>%
 #  filter(q2_webinars == 1)
-
