@@ -215,7 +215,7 @@ for (i in 1:nrow(support_dataframe)) {
 }
 
 # Graph across all support types
-ggplot(influence_all, aes(x = `Support type`, y = Proportion, fill = `Influence`)) + 
+ggplot(influence_all, aes(x = fct_rev(`Support type`), y = Proportion, fill = `Influence`)) + 
   geom_bar(stat = "identity", position = "stack") + coord_flip() + 
   scale_y_continuous(labels = percent) +  scale_x_discrete(labels = label_wrap(25)) + 
   geom_text(aes(label = sprintf("%d%%", round(Proportion * 100))), 
